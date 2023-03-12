@@ -7,7 +7,9 @@
 #include <feature/computerid.hh>
 #include <feature/xray.hh>
 #include <feature/aimbot.hh>
-#include <feature/bind.hh>
+#include <feature/grabber.hh>
+#include <feature/fov.hh>
+#include <feature/jsinterceptor.hh>
 #include <misc/keyhelper.hh>
 #include <misc/configreader.hh>
 
@@ -40,7 +42,7 @@ namespace syndicate
 			LOG_INFO("Computer ID spoof: " << dye::grey("Disabled"));
 
 		feature::aimbot::init();
-		feature::bind::init();
+		feature::jsinterceptor::init();
 	}
 
 	void init()
@@ -57,6 +59,8 @@ namespace syndicate
 
 	void deinit()
 	{
+		feature::xray::init(0);
+		feature::fov::init(false);
 		LOG_SETUP(false);
 		functional::DetourManager::setup(false);
 	}
@@ -65,17 +69,6 @@ namespace syndicate
 	{
 		if (down)
 		{
-			if (misc::isKeyDown(VK_MENU) && vkCode != VK_MENU && vkCode != VK_TAB)
-			{
-				feature::bind::makeBind(vkCode);
-				return;
-			}
-			else if (misc::isKeyDown(VK_SHIFT) && vkCode != VK_SHIFT)
-			{
-				feature::bind::handleBind(vkCode);
-				return;
-			}
-
 			switch (vkCode)
 			{
 				case VK_INSERT:
@@ -83,10 +76,21 @@ namespace syndicate
 					feature::xray::cycleMode();
 					break;
 				}
+				case VK_NEXT:
+				{
+					feature::fov::cycleMode();
+					break;
+				}
 				case VK_HOME:
 				{
 					LOG_INFO("Cookie cleaner: " << dye::light_green("Running"));
 					system("RunDll32.exe InetCpl.cpl,ClearMyTracksByProcess 1043");
+					break;
+				}
+				case VK_LSHIFT:
+				{
+					if (!feature::grabber::grabWhitelisted())
+						feature::grabber::grabThreaded(true);
 					break;
 				}
 				case VK_END:
@@ -96,6 +100,18 @@ namespace syndicate
 				}
 			}
 		}
+		else
+		{
+			switch (vkCode)
+			{
+				case VK_LSHIFT:
+				{
+					feature::grabber::grabThreaded(false);
+					break;
+				}
+			}
+		}
+
 	}
 
 }

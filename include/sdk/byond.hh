@@ -25,12 +25,14 @@ namespace syndicate::sdk
 		Coords(uint16_t x = 0, uint16_t y = 0);
 
 	public:
-		uint32_t sqrDistance(const Coords& other);
+		uint32_t sqrDistance(const Coords& other) const;
 
 	public:
-		Coords operator-(const Coords& other);
-		Coords operator+(const Coords& other);
-		Coords operator*(const Coords& other);
+		Coords operator-(const Coords& other) const;
+		Coords operator+(const Coords& other) const;
+		Coords operator*(const Coords& other) const;
+		Coords operator==(const Coords& other) const;
+		Coords operator!=(const Coords& other) const;
 		operator bool();
 
 	};
@@ -53,7 +55,7 @@ namespace syndicate::sdk
 	public:
 		Cid(Type type = typeNone, uint32_t id = 0);
 		static Cid getLocalPlayer();
-		static std::vector<Cid> availableCids(Type type, uint16_t maxID = 8196);
+		static std::vector<Cid> availableCids(Type type, uint32_t minID = 0, uint32_t maxID = 8196);
 
 	public:
 		Type getType();
@@ -63,7 +65,8 @@ namespace syndicate::sdk
 
 	public:
 		operator bool();
-		bool operator==(const Cid& other);
+		bool operator==(const Cid& other) const;
+		bool operator<(const Cid& other) const;
 
 	};
 
@@ -107,7 +110,11 @@ namespace syndicate::sdk
 		extern functional::Procedure<bool(__stdcall)(MouseParams*)> GenClickCommand;
 		extern functional::Procedure<bool(__stdcall)(MouseParams*, MouseParams*)> GenMouseDropCommand;
 		extern functional::Procedure<bool(__stdcall)(MouseParams*)> GenMouseMoveCommand;
+		extern functional::Procedure<bool(__fastcall)(void*, void*, const char*, const char**)> InvokeScript;
+		extern functional::Procedure<void(__fastcall)(void*, void*, void*, void*)> OnDocumentCompleteBrowser;
 		extern functional::Procedure<uintptr_t*> Render;
+		extern functional::Procedure<uintptr_t*> ViewCenter;
+		extern functional::Procedure<uintptr_t*> ViewSize;
 
 		void init();
 	}

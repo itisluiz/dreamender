@@ -13,7 +13,6 @@ namespace syndicate::feature::aimbot
 	{
 		if (misc::isKeyDown(VK_XBUTTON2))
 		{
-			
 			sdk::Cid localPlayer{ sdk::Cid::getLocalPlayer() };
 			sdk::Cid hitCid{ params->getCid() };
 

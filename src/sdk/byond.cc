@@ -9,7 +9,7 @@ namespace syndicate::sdk
 	Coords::Coords(uint16_t x, uint16_t y)
 		: x(x), y(y) { }
 
-	uint32_t Coords::sqrDistance(const Coords& other)
+	uint32_t Coords::sqrDistance(const Coords& other) const
 	{
 		int diffX{ static_cast<int>(x) - other.x };
 		int diffY{ static_cast<int>(y) - other.y };
@@ -17,19 +17,29 @@ namespace syndicate::sdk
 		return (diffX * diffX) + (diffY * diffY);
 	}
 
-	Coords Coords::operator-(const Coords& other)
+	Coords Coords::operator-(const Coords& other) const
 	{
 		return Coords( x - other.x, y - other.y );
 	}
 
-	Coords Coords::operator+(const Coords& other)
+	Coords Coords::operator+(const Coords& other) const
 	{
 		return Coords( x + other.x, y + other.y );
 	}
 
-	Coords Coords::operator*(const Coords& other)
+	Coords Coords::operator*(const Coords& other) const
 	{
 		return Coords(x * other.x, y * other.y);
+	}
+
+	Coords Coords::operator==(const Coords& other) const
+	{
+		return x == other.x && y == other.y;
+	}
+
+	Coords Coords::operator!=(const Coords& other) const
+	{
+		return !this->operator==(other);
 	}
 
 	Coords::operator bool()
@@ -47,11 +57,11 @@ namespace syndicate::sdk
 		return *byond::GetPlayerCid(&player);;
 	}
 
-	std::vector<Cid> Cid::availableCids(Type type, uint16_t maxID)
+	std::vector<Cid> Cid::availableCids(Type type, uint32_t minID, uint32_t maxID)
 	{
 		std::vector<Cid> cids;
 
-		for (uint16_t id{ 0 }; id < maxID; ++id)
+		for (uint32_t id{ minID }; id < maxID; ++id)
 		{
 			Cid cid(type, id);
 
@@ -86,9 +96,17 @@ namespace syndicate::sdk
 		return getPos();
 	}
 
-	bool Cid::operator==(const Cid& other)
+	bool Cid::operator==(const Cid& other) const
 	{
 		return m_type == other.m_type && m_id == other.m_id;
+	}
+
+	bool Cid::operator<(const Cid& other) const
+	{
+		if (m_type != other.m_type)
+			return m_type < other.m_type;
+
+		return m_id < other.m_id;
 	}
 
 	// Mouseparams
@@ -123,12 +141,19 @@ namespace syndicate::sdk
 		functional::Procedure<bool(__stdcall)(MouseParams*)> GenClickCommand;
 		functional::Procedure<bool(__stdcall)(MouseParams*, MouseParams*)> GenMouseDropCommand;
 		functional::Procedure<bool(__stdcall)(MouseParams*)> GenMouseMoveCommand;
+		functional::Procedure<bool(__fastcall)(void*, void*, const char*, const char**)> InvokeScript;
+		functional::Procedure<void(__fastcall)(void*, void*, void*, void*)> OnDocumentCompleteBrowser;
 		functional::Procedure<uintptr_t*> Render;
+		functional::Procedure<uintptr_t*> ViewCenter;
+		functional::Procedure<uintptr_t*> ViewSize;
 
 		void init()
 		{
 			HMODULE byondCore{ GetModuleHandleA("byondcore.dll") };
 			if (!byondCore) return;
+
+			HMODULE byondWin{ GetModuleHandleA("byondwin.dll") };
+			if (!byondWin) return;
 
 			GetPlayerCid = GetPlayerCid.fromExport(byondCore, "?GetPlayerCid@DSStat@@QAE?AUCid@@XZ");
 			GetCidLoc = GetCidLoc.fromExport(byondCore, "?GetCidLoc@DungClient@@QAE?AUCid@@U2@@Z");
@@ -136,7 +161,12 @@ namespace syndicate::sdk
 			GenClickCommand = GenClickCommand.fromExport(byondCore, "?GenClickCommand@DungClient@@QAEHABUMouseParams@@@Z");
 			GenMouseDropCommand = GenMouseDropCommand.fromExport(byondCore, "?GenMouseDropCommand@DungClient@@QAEHABUMouseParams@@0@Z");
 			GenMouseMoveCommand = GenMouseMoveCommand.fromExport(byondCore, "?GenMouseMoveCommand@DungClient@@QAEHABUMouseParams@@@Z");
+			InvokeScript = InvokeScript.fromExport(byondWin, "?InvokeScript@CVHTMLCtrl@@QAEHPBDPAUDMString@@@Z");
+			OnDocumentCompleteBrowser = OnDocumentCompleteBrowser.fromExport(byondWin, "?OnDocumentCompleteBrowser@CVHTMLCtrl@@IAEXPAUIDispatch@@PAUtagVARIANT@@@Z");
+
 			Render = Render.fromPattern(byondCore, { "74 20 A1 ?? ?? ?? ?? 85 C0", 3 });
+			ViewCenter = Render.fromPattern(byondCore, { "0F B7 05 ?? ?? ?? ?? 0F 45 C8 0F B7 C1 0F B7 0D ?? ?? ?? ??", 3 });
+			ViewSize = reinterpret_cast<uintptr_t*>(reinterpret_cast<uintptr_t>(&ViewCenter) + 13);
 		}
 
 	}
